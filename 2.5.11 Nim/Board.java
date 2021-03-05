@@ -6,7 +6,7 @@ public class Board {
     
     public static void populate()
     {
-        Board.pieces = (int) (Math.random() * 50);
+        Board.pieces = (int) ((Math.random() * 40) + 10);
     }
 
 }

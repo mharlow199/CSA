@@ -21,10 +21,10 @@ public class Game {
 
         while (Board.pieces > 0)
         {
-            if (lastPlayer.equals(playerOne))
-            {
-                ;//TODO
-            }
+            if (lastPlayer.equals(playerOne)) 
+                {Board.pieces -= move(playerTwo);}
+            else 
+                {Board.pieces -= move(playerOne);}
         }
 
     }
@@ -40,17 +40,16 @@ public class Game {
         if (Math.random() > 0.5d)
         {
             move(playerOne);
-            lastPlayer = playerOne;
         } else {
             move(playerTwo);
-            lastPlayer = playerTwo;
         }
     }
 
-    private String move(String player)
+    private int move(String player)
     {
+        lastPlayer = player;
         System.out.printf("%s, how many pieces do you want to take? %n", player);
-        return sc.nextLine();
+        return sc.nextInt();
     }
 
 }
