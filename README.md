@@ -1,3 +1,5 @@
 # CSA
+haha funny
 
-monkey
+Trinket code links:
+  MediaLibrunner -> https://trinket.io/java/2437bbcecd
