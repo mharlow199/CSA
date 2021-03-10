@@ -5,51 +5,60 @@ public class Game {
     
     Scanner sc = new Scanner(System.in);
 
-    private String playerOne;
-    private String playerTwo;
-    private String lastPlayer;
+    private Player playerOne;
+    private Player playerTwo;
+    private Player lastPlayer;
 
 
     public void play()
     {
-        playerOne = newPlayer();
-        playerTwo = newPlayer();
+        if (playerOne == null && playerTwo == null)
+        {
+            playerOne = new Player(sc);
+            playerTwo = new Player(sc);    
+        }
+        
 
-        System.out.printf("Players: %s, %s | Board pieces: %d", playerOne, playerTwo, Board.pieces);
+        System.out.printf("Players: %s, %s | Board pieces: %d%n", playerOne, playerTwo, Board.pieces);
+        Board.printBoard();
 
         firstMove();
 
-        while (Board.pieces > 0)
+        while (Board.pieces > 1)
         {
             if (lastPlayer.equals(playerOne)) 
-                {Board.pieces -= move(playerTwo);}
+                move(playerTwo);
             else 
-                {Board.pieces -= move(playerOne);}
+                move(playerOne);
         }
 
+        if (lastPlayer.equals(playerOne))
+            System.out.println(playerTwo + " is today's big loser");
+        else
+            System.out.println(playerOne + " is today's big loser");
     }
 
-    private String newPlayer()
-    {
-        System.out.println("Enter a player name: ");
-        return sc.nextLine();
-    }
-    
     private void firstMove()
     {
-        if (Math.random() > 0.5d)
-        {
-            move(playerOne);
-        } else {
-            move(playerTwo);
-        }
+        if (Math.random() > 0.5)
+            lastPlayer = playerOne;
+        else 
+            lastPlayer = playerTwo;
     }
 
-    private int move(String player)
+    private void move(Player player)
     {
         lastPlayer = player;
         System.out.printf("%s, how many pieces do you want to take? %n", player);
-        return sc.nextInt();
+        int removePieces = sc.nextInt();
+        if (removePieces < 1 || removePieces > (Board.pieces / 2))
+        {
+            System.out.println("The number has to be between 1 and half the total pile! Try again!");
+            move(player);
+        } else {
+            Board.takePieces(removePieces);
+            System.out.println("Pieces remaining: " + Board.pieces);
+            Board.printBoard();
+        }
     }
-
 }
