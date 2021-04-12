@@ -2,6 +2,7 @@
 haha funny
 
 Trinket code links:
+* [6.2 Traversing Arrays](https://trinket.io/java/b37f072feb)
 
 * [MediaLibrunner](https://trinket.io/java/2437bbcecd)
   
