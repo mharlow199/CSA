@@ -12,4 +12,6 @@ Trinket code links:
 
 * [7.4 Algorithms with ArrayLists](https://trinket.io/java/267cf5936c)
 
-* [7.5 Sorting ArrayLists](https://trinket.io/java/e9ba169640)
+* [7.5 searching ArrayLists](https://trinket.io/java/e9ba169640)
+
+* [7.6 sorting Arrays and Arraylists](https://trinket.io/java/05c8f73388)
