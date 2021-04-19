@@ -15,3 +15,5 @@ Trinket code links:
 * [7.5 searching ArrayLists](https://trinket.io/java/e9ba169640)
 
 * [7.6 sorting Arrays and Arraylists](https://trinket.io/java/05c8f73388)
+
+* [8.1 2D arrays](https://trinket.io/java/db4cbbb4e2) 
