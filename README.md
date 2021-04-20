@@ -11,3 +11,4 @@ Trinket code links:
 * [7.6 sorting Arrays and Arraylists](https://trinket.io/java/05c8f73388)
 * [8.1 2d Arrays](https://trinket.io/java/db4cbbb4e2) 
 * [8.2 Traversing 2d Arrays](https://trinket.io/java/70c3d1c1bd)
+* [9.1 Superclasses and Subclasses](https://trinket.io/java/ba58608b78)
