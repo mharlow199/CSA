@@ -12,3 +12,4 @@ Trinket code links:
 * [8.1 2d Arrays](https://trinket.io/java/db4cbbb4e2) 
 * [8.2 Traversing 2d Arrays](https://trinket.io/java/70c3d1c1bd)
 * [9.1 Superclasses and Subclasses](https://trinket.io/java/ba58608b78)
+* [9.2 Subclass Constructors](https://trinket.io/java/23a2021569)
