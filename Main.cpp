@@ -1,13 +1,30 @@
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <iostream>
 
 using namespace std;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 class Screen {
 private:
     bool screen[128][128];
+    bool screenCopy[128][128];
+
+    int findNeighbors(int row, int col) {
+        int n = 0;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (get((row + i + 128) % 128, (col + j + 128) % 128)) {
+                    n++;
+                }
+            }
+        }
+        if (get(row, col))
+            n--;
+        return n;
+    }
 public:
     Screen() {
         for (int i = 0; i < 128; i++) {
@@ -29,11 +46,31 @@ public:
         screen[row][col] = !(screen[row][col]);
     }
 
+    void update() {
+        int neighbors;
+        copy(&screen[0][0], &screen[0][0] + 128 * 128, &screenCopy[0][0]);
+        for (int row = 0; row < 128; row++) {
+            for (int col = 0; col < 128; col++) {
+                neighbors = findNeighbors(row, col);
+                if (neighbors < 2) {
+                    screenCopy[row][col] = false;
+                }
+                else if (neighbors == 3) {
+                    screenCopy[row][col] = true;
+                }
+                else if (neighbors > 3) {
+                    screenCopy[row][col] = false;
+                }
+            }
+        }
+        copy(&screenCopy[0][0], &screenCopy[0][0] + 128 * 128, &screen[0][0]);
+    }
+
 };
 
 Screen screen;
 double xpos, ypos;
-bool leftButtonDown;
+bool leftButtonDown, paused = true;
 
 int main(void)
 {
@@ -57,10 +94,15 @@ int main(void)
     glOrtho(0, 128, 128, 0, 1, -1);
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     //screen.swap(0, 0);
     //screen.swap(54, 87);
     //screen.swap(127, 127);
+
+    screen.swap(64, 63);
+    screen.swap(64, 64);
+    screen.swap(64, 65);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -69,6 +111,10 @@ int main(void)
         if (leftButtonDown) {
             screen.set((int)(xpos / 4), (int)(ypos / 4), true);
         }
+        if (!paused) {
+            screen.update();
+        }
+        
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -106,4 +152,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         //screen.swap((int) (xpos / 4), (int) (ypos / 4));
         //divide by 4 to match orthographic with grid
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        paused = !paused;
 }
