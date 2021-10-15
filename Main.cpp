@@ -68,6 +68,18 @@ public:
 
 };
 
+struct Timer {
+    double time = 0.0;
+
+    void update(double dt) {
+        time += 1.0 * dt;
+    }
+
+    void reset() {
+        time = 0.0;
+    }
+};
+
 Screen screen;
 double xpos, ypos;
 bool leftButtonDown, paused = true;
@@ -75,7 +87,7 @@ bool leftButtonDown, paused = true;
 int main(void)
 {
     GLFWwindow* window;
-    
+
 
     /* Initialize the library */
     if (!glfwInit())
@@ -100,21 +112,27 @@ int main(void)
     //screen.swap(54, 87);
     //screen.swap(127, 127);
 
-    screen.swap(64, 63);
-    screen.swap(64, 64);
-    screen.swap(64, 65);
-
+    double end;
+    double dt = -1.0f;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        Timer timer;
+        double begin = glfwGetTime();
+
+        if (dt != -1.0) {
+            timer.update(dt);
+        }
+
         glfwGetCursorPos(window, &xpos, &ypos);
         if (leftButtonDown) {
             screen.set((int)(xpos / 4), (int)(ypos / 4), true);
         }
-        if (!paused) {
+        if (!paused && timer.time > 2) {
             screen.update();
+            timer.reset();
         }
-        
+
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -137,6 +155,9 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
+
+        end = glfwGetTime();
+        dt = end - begin;
     }
 
     glfwTerminate();
@@ -150,8 +171,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
         leftButtonDown = false;
 
-        //screen.swap((int) (xpos / 4), (int) (ypos / 4));
-        //divide by 4 to match orthographic with grid
+    //screen.swap((int) (xpos / 4), (int) (ypos / 4));
+    //divide by 4 to match orthographic with grid
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
