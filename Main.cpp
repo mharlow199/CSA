@@ -94,7 +94,7 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(512, 512, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(512, 512, "Conway's Game of Life", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -112,13 +112,14 @@ int main(void)
     //screen.swap(54, 87);
     //screen.swap(127, 127);
 
-    double end;
+    double end, begin;
     double dt = -1.0f;
+    Timer timer;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        Timer timer;
-        double begin = glfwGetTime();
+        
+        begin = glfwGetTime();
 
         if (dt != -1.0) {
             timer.update(dt);
@@ -128,7 +129,7 @@ int main(void)
         if (leftButtonDown) {
             screen.set((int)(xpos / 4), (int)(ypos / 4), true);
         }
-        if (!paused && timer.time > 2) {
+        if (!paused && timer.time > 0.1) {
             screen.update();
             timer.reset();
         }
