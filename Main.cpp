@@ -1,6 +1,10 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
+
+constexpr auto SIZE = 512;
 
 using namespace std;
 
@@ -9,14 +13,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 class Screen {
 private:
-    bool screen[128][128];
-    bool screenCopy[128][128];
+    bool screen[SIZE][SIZE];
+    bool screenCopy[SIZE][SIZE];
 
     int findNeighbors(int row, int col) {
         int n = 0;
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                if (get((row + i + 128) % 128, (col + j + 128) % 128)) {
+                if (get((row + i + SIZE) % SIZE, (col + j + SIZE) % SIZE)) {
                     n++;
                 }
             }
@@ -27,8 +31,8 @@ private:
     }
 public:
     Screen() {
-        for (int i = 0; i < 128; i++) {
-            for (int j = 0; j < 128; j++) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
                 screen[i][j] = 0;
             }
         }
@@ -48,9 +52,9 @@ public:
 
     void update() {
         int neighbors;
-        copy(&screen[0][0], &screen[0][0] + 128 * 128, &screenCopy[0][0]);
-        for (int row = 0; row < 128; row++) {
-            for (int col = 0; col < 128; col++) {
+        copy(&screen[0][0], &screen[0][0] + SIZE * SIZE, &screenCopy[0][0]);
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
                 neighbors = findNeighbors(row, col);
                 if (neighbors < 2) {
                     screenCopy[row][col] = false;
@@ -63,7 +67,17 @@ public:
                 }
             }
         }
-        copy(&screenCopy[0][0], &screenCopy[0][0] + 128 * 128, &screen[0][0]);
+        copy(&screenCopy[0][0], &screenCopy[0][0] + SIZE * SIZE, &screen[0][0]);
+    }
+
+    void fillRandom() {
+        srand(time(0));
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if ((float) rand() / INT16_MAX > 0.5)
+                    screen[i][j] = 1;
+            }
+        }
     }
 
 };
@@ -103,12 +117,13 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-    glOrtho(0, 128, 128, 0, 1, -1);
+    glOrtho(0, SIZE, SIZE, 0, 1, -1);
+    glfwSwapInterval(0);
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    //screen.swap(0, 0);
+    screen.swap(10, 0);
     //screen.swap(54, 87);
     //screen.swap(127, 127);
 
@@ -127,7 +142,7 @@ int main(void)
 
         glfwGetCursorPos(window, &xpos, &ypos);
         if (leftButtonDown) {
-            screen.set((int)(xpos / 4), (int)(ypos / 4), true);
+            screen.set((int)(xpos / (512 / SIZE)), (int)(ypos / (512 / SIZE)), true);
         }
         if (!paused && timer.time > 0.1) {
             screen.update();
@@ -139,9 +154,10 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBegin(GL_QUADS);
-        for (int row = 0; row < 128; row++) {
-            for (int col = 0; col < 128; col++) {
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
                 if (screen.get(row, col)) {
+                    glColor3f(row/ (float) SIZE, col/ (float) SIZE, 0.5f);
                     glVertex2f(row, col);
                     glVertex2f(row + 1, col);
                     glVertex2f(row + 1, col + 1);
@@ -180,4 +196,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
         paused = !paused;
+    else if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        screen.fillRandom();
 }
