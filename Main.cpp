@@ -3,8 +3,14 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <stdio.h>
 
-constexpr auto SIZE = 512;
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+
+constexpr auto SIZE = 64;
 
 using namespace std;
 
@@ -74,7 +80,7 @@ public:
         srand(time(0));
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if ((float) rand() / INT16_MAX > 0.5)
+                if ((float) rand() / INT16_MAX > 0.8)
                     screen[i][j] = 1;
             }
         }
@@ -123,9 +129,18 @@ int main(void)
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    screen.swap(10, 0);
-    //screen.swap(54, 87);
-    //screen.swap(127, 127);
+
+    //IMGUI
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+
 
     double end, begin;
     double dt = -1.0f;
@@ -149,6 +164,11 @@ int main(void)
             timer.reset();
         }
 
+        //IMGUI
+        // feed inputs to dear imgui, start new frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -166,6 +186,14 @@ int main(void)
             }
         }
         glEnd();
+
+        ImGui::Begin("Demo window");
+        ImGui::Button("Hello!");
+        ImGui::End();
+
+        // Render dear imgui into screen
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -187,6 +215,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         leftButtonDown = true;
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
         leftButtonDown = false;
+
+    //ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 
     //screen.swap((int) (xpos / 4), (int) (ypos / 4));
     //divide by 4 to match orthographic with grid
