@@ -16,6 +16,7 @@ using namespace std;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+ImGuiIO& imGuiSetup();
 
 class Screen {
 private:
@@ -104,6 +105,8 @@ Screen screen;
 double xpos, ypos;
 bool leftButtonDown, paused = true;
 
+ImGuiIO& io = imGuiSetup();
+
 int main(void)
 {
     GLFWwindow* window;
@@ -126,20 +129,18 @@ int main(void)
     glOrtho(0, SIZE, SIZE, 0, 1, -1);
     glfwSwapInterval(0);
 
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetKeyCallback(window, key_callback);
-
-
     //IMGUI
     // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetKeyCallback(window, key_callback);
+
+
 
 
     double end, begin;
@@ -211,10 +212,12 @@ int main(void)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        leftButtonDown = true;
-    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-        leftButtonDown = false;
+    if (!io.WantCaptureMouse) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+            leftButtonDown = true;
+        else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+            leftButtonDown = false;
+    }
 
     //ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 
@@ -228,4 +231,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         paused = !paused;
     else if (key == GLFW_KEY_R && action == GLFW_PRESS)
         screen.fillRandom();
+}
+
+ImGuiIO& imGuiSetup() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    return ImGui::GetIO();
 }
