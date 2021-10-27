@@ -20,8 +20,10 @@ ImGuiIO& imGuiSetup();
 
 class Screen {
 private:
-    bool screen[SIZE][SIZE];
-    bool screenCopy[SIZE][SIZE];
+    bool* screen = new bool[SIZE * SIZE];
+    bool* screenCopy = new bool[SIZE * SIZE];
+    enum drawType {STANDARD, GLIDER};
+    drawType drawCursor;
 
     int findNeighbors(int row, int col) {
         int n = 0;
@@ -40,41 +42,69 @@ public:
     Screen() {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                screen[i][j] = 0;
+                screen[i * SIZE + j] = 0;
+                screenCopy[i * SIZE + j] = 0;
             }
         }
     }
 
+    ~Screen() {
+        delete[] screen;
+        delete[] screenCopy;
+    }
+
     bool get(int row, int col) {
-        return screen[row][col];
+        return screen[row * SIZE + col];
     }
 
     void set(int row, int col, bool state) {
-        screen[row][col] = state;
+        screen[row * SIZE + col] = state;
     }
 
     void swap(int row, int col) {
-        screen[row][col] = !(screen[row][col]);
+        screen[row * SIZE + col] = !(screen[row * SIZE + col]);
     }
 
     void update() {
         int neighbors;
-        copy(&screen[0][0], &screen[0][0] + SIZE * SIZE, &screenCopy[0][0]);
+        copy(&screen[0], &screen[0] + SIZE * SIZE, &screenCopy[0]);
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 neighbors = findNeighbors(row, col);
                 if (neighbors < 2) {
-                    screenCopy[row][col] = false;
+                    screenCopy[row * SIZE + col] = false;
                 }
                 else if (neighbors == 3) {
-                    screenCopy[row][col] = true;
+                    screenCopy[row * SIZE + col] = true;
                 }
                 else if (neighbors > 3) {
-                    screenCopy[row][col] = false;
+                    screenCopy[row * SIZE + col] = false;
                 }
             }
         }
-        copy(&screenCopy[0][0], &screenCopy[0][0] + SIZE * SIZE, &screen[0][0]);
+        copy(&screenCopy[0], &screenCopy[0] + SIZE * SIZE, &screen[0]);
+    }
+
+    void setDrawing(int type) {
+        drawCursor = (drawType) type;
+    }
+
+
+    void draw(int row, int col) {
+        switch (drawCursor) {
+        case STANDARD: {
+            set(row, col, true);
+            break;
+        }
+        case GLIDER: {
+            set(row - 1, col, true);
+            set(row, col + 1, true);
+            set(row + 1, col + 1, true);
+            set(row + 1, col, true);
+            set(row + 1, col - 1, true);
+            break;
+        }
+        }
     }
 
     void fillRandom() {
@@ -82,7 +112,7 @@ public:
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if ((float) rand() / INT16_MAX > 0.8)
-                    screen[i][j] = 1;
+                    screen[i * SIZE + j] = 1;
             }
         }
     }
@@ -131,6 +161,7 @@ int main(void)
 
     //IMGUI
     // Setup Dear ImGui context
+    // 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
@@ -149,7 +180,6 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        
         begin = glfwGetTime();
 
         if (dt != -1.0) {
@@ -158,7 +188,7 @@ int main(void)
 
         glfwGetCursorPos(window, &xpos, &ypos);
         if (leftButtonDown) {
-            screen.set((int)(xpos / (512 / SIZE)), (int)(ypos / (512 / SIZE)), true);
+            screen.draw((int)(xpos / (512 / SIZE)), (int)(ypos / (512 / SIZE)));
         }
         if (!paused && timer.time > 0.1) {
             screen.update();
@@ -169,6 +199,7 @@ int main(void)
         // feed inputs to dear imgui, start new frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        
         ImGui::NewFrame();
 
         /* Render here */
@@ -188,8 +219,13 @@ int main(void)
         }
         glEnd();
 
-        ImGui::Begin("Demo window");
-        ImGui::Button("Hello!");
+        ImGui::Begin("Drawing");
+        if (ImGui::Button("Standard")) {
+            screen.setDrawing(0);
+        }
+        if (ImGui::Button("Glider")) {
+            screen.setDrawing(1);
+        }
         ImGui::End();
 
         // Render dear imgui into screen
@@ -205,6 +241,10 @@ int main(void)
         end = glfwGetTime();
         dt = end - begin;
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;
