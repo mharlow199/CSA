@@ -10,17 +10,20 @@
 #include "imgui_impl_opengl3.h"
 
 
-constexpr auto SIZE = 64;
+constexpr auto SIZE = 32;
 
 using namespace std;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+ImGuiIO& imGuiSetup();
 
 class Screen {
 private:
-    bool screen[SIZE][SIZE];
-    bool screenCopy[SIZE][SIZE];
+    bool* screen = new bool[SIZE * SIZE];
+    bool* screenCopy = new bool[SIZE * SIZE];
+    enum drawType {ERASE, STANDARD, GLIDER, GUN};
+    drawType drawCursor = STANDARD;
 
     int findNeighbors(int row, int col) {
         int n = 0;
@@ -39,41 +42,79 @@ public:
     Screen() {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                screen[i][j] = 0;
+                screen[i * SIZE + j] = 0;
+                screenCopy[i * SIZE + j] = 0;
             }
         }
     }
 
+    ~Screen() {
+        delete[] screen;
+        delete[] screenCopy;
+    }
+
     bool get(int row, int col) {
-        return screen[row][col];
+        return screen[row * SIZE + col];
     }
 
     void set(int row, int col, bool state) {
-        screen[row][col] = state;
+        screen[row * SIZE + col] = state;
     }
 
     void swap(int row, int col) {
-        screen[row][col] = !(screen[row][col]);
+        screen[row * SIZE + col] = !(screen[row * SIZE + col]);
     }
 
     void update() {
         int neighbors;
-        copy(&screen[0][0], &screen[0][0] + SIZE * SIZE, &screenCopy[0][0]);
+        copy(&screen[0], &screen[0] + SIZE * SIZE, &screenCopy[0]);
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 neighbors = findNeighbors(row, col);
                 if (neighbors < 2) {
-                    screenCopy[row][col] = false;
+                    screenCopy[row * SIZE + col] = false;
                 }
                 else if (neighbors == 3) {
-                    screenCopy[row][col] = true;
+                    screenCopy[row * SIZE + col] = true;
                 }
                 else if (neighbors > 3) {
-                    screenCopy[row][col] = false;
+                    screenCopy[row * SIZE + col] = false;
                 }
             }
         }
-        copy(&screenCopy[0][0], &screenCopy[0][0] + SIZE * SIZE, &screen[0][0]);
+        copy(&screenCopy[0], &screenCopy[0] + SIZE * SIZE, &screen[0]);
+    }
+
+    void setDrawing(int type) {
+        drawCursor = static_cast<drawType>(type);
+    }
+
+
+    void draw(int row, int col) {
+        switch (drawCursor) {
+            case ERASE: {
+                set(row, col, false);
+                break;
+            }
+            case STANDARD: {
+                set(row, col, true);
+                break;
+            }
+            case GLIDER: {
+                set(row - 1, col, true);
+                set(row, col + 1, true);
+                set(row + 1, col + 1, true);
+                set(row + 1, col, true);
+                set(row + 1, col - 1, true);
+                break;
+            }
+            case GUN: {
+                break; //TODO add gun and improve this system in general
+            }
+            default: {
+                break;
+            }
+        }
     }
 
     void fillRandom() {
@@ -81,7 +122,7 @@ public:
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if ((float) rand() / INT16_MAX > 0.8)
-                    screen[i][j] = 1;
+                    screen[i * SIZE + j] = 1;
             }
         }
     }
@@ -103,6 +144,8 @@ struct Timer {
 Screen screen;
 double xpos, ypos;
 bool leftButtonDown, paused = true;
+
+ImGuiIO& io = imGuiSetup();
 
 int main(void)
 {
@@ -126,29 +169,28 @@ int main(void)
     glOrtho(0, SIZE, SIZE, 0, 1, -1);
     glfwSwapInterval(0);
 
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetKeyCallback(window, key_callback);
-
-
     //IMGUI
     // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    // 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetKeyCallback(window, key_callback);
+
+
+
 
     double end, begin;
     double dt = -1.0f;
     Timer timer;
+    string tool = "Standard";
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        
         begin = glfwGetTime();
 
         if (dt != -1.0) {
@@ -157,7 +199,7 @@ int main(void)
 
         glfwGetCursorPos(window, &xpos, &ypos);
         if (leftButtonDown) {
-            screen.set((int)(xpos / (512 / SIZE)), (int)(ypos / (512 / SIZE)), true);
+            screen.draw((int)(xpos / (512 / SIZE)), (int)(ypos / (512 / SIZE)));
         }
         if (!paused && timer.time > 0.1) {
             screen.update();
@@ -168,6 +210,7 @@ int main(void)
         // feed inputs to dear imgui, start new frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        
         ImGui::NewFrame();
 
         /* Render here */
@@ -187,8 +230,21 @@ int main(void)
         }
         glEnd();
 
-        ImGui::Begin("Demo window");
-        ImGui::Button("Hello!");
+
+        ImGui::Begin("Drawing");
+        ImGui::Text(&tool[0]);
+        if (ImGui::Button("Eraser")) {
+            screen.setDrawing(0);
+            tool = "Eraser";
+        }
+        if (ImGui::Button("Standard")) {
+            screen.setDrawing(1);
+            tool = "Standard";
+        }
+        if (ImGui::Button("Glider")) {
+            screen.setDrawing(2);
+            tool = "Glider";
+        }
         ImGui::End();
 
         // Render dear imgui into screen
@@ -205,16 +261,22 @@ int main(void)
         dt = end - begin;
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwTerminate();
     return 0;
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        leftButtonDown = true;
-    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-        leftButtonDown = false;
+    if (!io.WantCaptureMouse) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+            leftButtonDown = true;
+        else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+            leftButtonDown = false;
+    }
 
     //ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 
@@ -228,4 +290,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         paused = !paused;
     else if (key == GLFW_KEY_R && action == GLFW_PRESS)
         screen.fillRandom();
+}
+
+ImGuiIO& imGuiSetup() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    return ImGui::GetIO();
 }
